@@ -1,6 +1,7 @@
 from Demon import Demon
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 ##
 # Print a bar histogram
@@ -13,16 +14,14 @@ import matplotlib.pyplot as plt
 # out - output name file for figure
 ##
 def histogram(x,freq,xlabel=None,ylabel=None,out=None):
-	pos = np.arange(len(x))
-	width = 0.5     # gives histogram aspect to the bar diagram
-	
-	ax = plt.axes()
-	ax.set_xticks(pos + (width / 2))
-	ax.set_xticklabels(x)
-	plt.xticks(rotation="vertical")
-	plt.bar(pos, freq, width, color='g',alpha=0.6,linewidth=0)
-	plt.margins(0.01)
+	fake_label = list(map(str,x))
+	for i in range(0,len(fake_label)-1):
+		if (i%5 != 0):
+			fake_label[i] = ""
 
+	plt.bar(range(len(freq)),freq,color='g',alpha=0.6,linewidth=0)
+	plt.xticks(range(len(fake_label)),fake_label, size='small',rotation='horizontal')
+	
 	if (xlabel != None and ylabel != None):
 		plt.xlabel(xlabel)
 		plt.ylabel(ylabel)
@@ -30,7 +29,7 @@ def histogram(x,freq,xlabel=None,ylabel=None,out=None):
 	if out == None:
 		plt.show()
 	else:
-		plt.savefig(out,bbox_inches="tight")
+		plt.savefig(out+".svg",bbox_inches="tight")
 
 ##
 # Make a communities analysis using DEMON algorithm written
@@ -56,10 +55,38 @@ def demon_analysis(network,epsilon_range,min_community,bins,out):
 		x.append(round(epsilon,3))
 		epsilon += epsilon_range[1]/bins
 
-	histogram(x,freq,"Epsilon","Number of communities")
-	
+	#histogram(x,freq,"Epsilon","Number of communities","/tmp/demon")
+
+##
+# Load dict from file. Format:
+# key\t["a","b","c"]
+##
+def dict_from_file(path_dict):
+	out_dict = {}
+	with open(path_dict, 'r') as f:
+		for line in f:
+			out_dict[int(line.split("\t")[0])] = eval(line.split("\t")[1])
+	return out_dict
+
+##
+# Load dicts from file made by DEMON with different epsilon and
+# plot communities frequencies
+##
+def plot_epsilon_dict():
+	l = {}
+	dict_list = os.listdir("../demon_log/")
+	dict_list.sort()
+	for d in dict_list:
+		l[float(d.split("_")[2])] = len(dict_from_file("../demon_log/" +d))
+	x = []
+	freq = []
+	for i in sorted(l):
+		x.append(i)
+		freq.append(l[i])
+	histogram(x,freq,"Epsilon","Number of communities","/tmp/demon")
+
 def main():
-	demon_analysis("../data/network_cleaned16.csv",(0.001,0.4),3,2,"/tmp/demon")
+	demon_analysis("../data/network_cleaned16.csv",(0.001,0.4),3,60,"/tmp/demon")
 
 if __name__ == "__main__":
 	main()
