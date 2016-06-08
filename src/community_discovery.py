@@ -1,6 +1,7 @@
 from Demon import Demon
 import numpy as np
 import matplotlib.pyplot as plt
+import networkx as nx
 import os
 
 ##
@@ -20,7 +21,7 @@ def histogram(x,freq,xlabel=None,ylabel=None,out=None):
 			fake_label[i] = ""
 
 	plt.bar(range(len(freq)),freq,color='g',alpha=0.6,linewidth=0)
-	plt.xticks(range(len(fake_label)),fake_label, size='small',rotation='horizontal')
+	plt.xticks(range(len(fake_label)),fake_label, size='small',rotation='vertical')
 	
 	if (xlabel != None and ylabel != None):
 		plt.xlabel(xlabel)
@@ -55,7 +56,50 @@ def demon_analysis(network,epsilon_range,min_community,bins,out):
 		x.append(round(epsilon,3))
 		epsilon += epsilon_range[1]/bins
 
-	#histogram(x,freq,"Epsilon","Number of communities","/tmp/demon")
+##
+# Plot two type of distribution analysis computed on a set of comunity.
+##
+# Params:
+# distribution_type - Type of distribution analysis {density,transitivity,nodes}
+# graph - Main network contain communities for analysis
+# eps_list - List of epsilon to analyze
+# log_directory - Directory of comunity analysis results
+# out - Path for output plot result
+##
+def plot_distribution(distribution_type,graph,eps_list,log_directory="../demon_log/",out=None):
+	x = [i for i in range(0,30)]
+	legend = []
+	eps_list = list(map(str,eps_list))
+	for eps in eps_list:
+		dict_list = os.listdir(log_directory)
+		for d in dict_list:
+			if eps in d:
+				list_dict_values = list(dict_from_file(log_directory+d).values())
+				list_dict_values.sort(key=len,reverse=True)
+				if distribution_type.lower() == "nodes":
+					y = list(map(len,list_dict_values[:30]))
+				else:
+					y = []
+					for l in list_dict_values[:30]:
+						H = graph.subgraph(l)
+						if distribution_type.lower() == "density":
+							y.append(nx.density(H))
+						elif distribution_type.lower() == "transitivity":
+							y.append(nx.transitivity(H))
+						else:
+							return None
+				plt.plot(x,y,linewidth=2,alpha=0.8)
+				legend.append("eps = " + eps)
+
+	plt.legend(legend, loc='upper right')
+	plt.xlabel("Comunity ID")
+	plt.ylabel(distribution_type)
+
+	if out == None:
+		plt.show()
+	else:
+		plt.savefig(out+".svg",bbox_inches="tight")
+	plt.close()
 
 ##
 # Load dict from file. Format:
@@ -72,21 +116,39 @@ def dict_from_file(path_dict):
 # Load dicts from file made by DEMON with different epsilon and
 # plot communities frequencies
 ##
-def plot_epsilon_dict():
+def plot_epsilon_dict(log_directory="../demon_log/",out=None):
 	l = {}
-	dict_list = os.listdir("../demon_log/")
+	dict_list = os.listdir(log_directory)
 	dict_list.sort()
 	for d in dict_list:
-		l[float(d.split("_")[2])] = len(dict_from_file("../demon_log/" +d))
+		l[float(d.split("_")[2])] = len(dict_from_file(log_directory +d))
 	x = []
 	freq = []
 	for i in sorted(l):
 		x.append(i)
 		freq.append(l[i])
-	histogram(x,freq,"Epsilon","Number of communities","/tmp/demon")
+	histogram(x,freq,"Epsilon","Number of communities",out)
+
+##
+# Read edges list from file
+##
+def read_graph(filename):
+	# Read graph from edgelist file
+	g = nx.Graph()
+	f = open(filename)
+	for l in f:
+		l = l.rstrip().replace(" ", ";").replace(",", ";").replace("\t", ";").split(";")
+		g.add_edge(l[0], l[1])
+	return g
 
 def main():
-	demon_analysis("../data/network_cleaned16.csv",(0.001,0.4),3,60,"/tmp/demon")
+	#demon_analysis("../data/network_cleaned16.csv",(0.001,0.4),3,60,"/tmp/demon")
+	#plot_epsilon_dict()
+
+	#G=read_graph("../data/network_cleaned16.csv")
+	#plot_distribution(distribution_type="Nodes",eps_list=[0.034,0.234,0.301,0.368],graph=G,out="/tmp/nodes_DEMON")
+	#plot_distribution(distribution_type="Density",eps_list=[0.034,0.234,0.301,0.368],graph=G,out="/tmp/density_DEMON")
+	#plot_distribution(distribution_type="Transitivity",eps_list=[0.034,0.234,0.301,0.368],graph=G,out="/tmp/transitivity_DEMON")
 
 if __name__ == "__main__":
 	main()
