@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 import os
+from itertools import product
+import seaborn as sns
 
 ##
 # Print a bar histogram
@@ -130,6 +132,51 @@ def plot_epsilon_dict(log_directory="../demon_log/",out=None):
 	histogram(x,freq,"Epsilon","Number of communities",out)
 
 ##
+# Plot jaccard heatmap calculated on comunity result serialized on file.
+##
+# Params:
+# eps - value of epsilon to analyze
+# log_directory - Directory of comunity analysis results
+# out - Path for output plot result
+## 
+def plot_jaccard_heatmap(eps,log_directory="../demon_log/",out=None):
+	eps = str(eps)
+	dict_list = os.listdir(log_directory)
+	for d in dict_list:
+		if eps in d:
+			list_dict_values = list(dict_from_file(log_directory+d).values())
+			list_dict_values.sort(key=len,reverse=True)
+			data =np.array(list(map(jaccard_similarity,list(product(list_dict_values[:30], repeat=2)))))
+			data = data.reshape(30,30)
+			ax = plt.axes()
+			cmap = sns.diverging_palette(220, 10, as_cmap=True)
+			heat = sns.heatmap(data,cmap=plt.cm.Reds,square=True,linewidths=.5, cbar_kws={"shrink": .5},ax = ax)
+			heat.invert_yaxis()
+			plt.ylabel("Comunity ID")
+			plt.xlabel("Comunity ID")
+			plt.yticks(size='small',rotation='horizontal')
+			plt.xticks(size='small',rotation='vertical')
+			if out == None:
+				plt.show()
+			else:
+				plt.savefig(out+".svg",bbox_inches="tight")
+			plt.close()
+
+##
+# Jaccard similarity between two list.
+# (Made for use with map()) 
+##
+# Params:
+# pair - tuple of list
+##
+def jaccard_similarity(pair):
+	x = pair[0]
+	y = pair[1]
+	intersection_cardinality = len(set.intersection(*[set(x), set(y)]))
+	union_cardinality = len(set.union(*[set(x), set(y)]))
+	return intersection_cardinality/float(union_cardinality)
+
+##
 # Read edges list from file
 ##
 def read_graph(filename):
@@ -149,6 +196,8 @@ def main():
 	#plot_distribution(distribution_type="Nodes",eps_list=[0.034,0.234,0.301,0.368],graph=G,out="/tmp/nodes_DEMON")
 	#plot_distribution(distribution_type="Density",eps_list=[0.034,0.234,0.301,0.368],graph=G,out="/tmp/density_DEMON")
 	#plot_distribution(distribution_type="Transitivity",eps_list=[0.034,0.234,0.301,0.368],graph=G,out="/tmp/transitivity_DEMON")
+
+	#plot_jaccard_heatmap(0.001)
 
 if __name__ == "__main__":
 	main()
