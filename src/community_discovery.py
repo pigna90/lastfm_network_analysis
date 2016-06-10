@@ -5,6 +5,7 @@ import networkx as nx
 import os
 from itertools import product
 import seaborn as sns
+import pandas as pd
 
 ##
 # Print a bar histogram
@@ -93,7 +94,7 @@ def plot_distribution(distribution_type,graph,eps_list,log_directory="../demon_l
 				plt.plot(x,y,linewidth=2,alpha=0.8)
 				legend.append("eps = " + eps)
 
-	plt.legend(legend, loc='upper right')
+	plt.legend(legend, loc='upper left')
 	plt.xlabel("Comunity ID")
 	plt.ylabel(distribution_type)
 
@@ -163,6 +164,39 @@ def plot_jaccard_heatmap(eps,log_directory="../demon_log/",out=None):
 			plt.close()
 
 ##
+# Plot piechart of communities external data.
+##
+# Params:
+# eps - value of epsilon to analyze
+# data - csv of external data
+# community - number of community to analyze
+# log_directory - Directory of comunity analysis results
+# pie_pieces - number of segment
+# out - Path for output plot result
+def plot_pie_external(eps,data,dim,community,log_directory="../demon_log/",pie_pieces=10,out=None):
+	eps = str(eps)
+	
+	dict_list = os.listdir(log_directory)
+	for d in dict_list:
+		if eps in d:
+			list_dict_values = list(dict_from_file(log_directory+d).values())
+			list_dict_values.sort(key=len,reverse=True)
+			df = pd.read_csv(data)
+			counts = df[df["username"].isin(list(set(list_dict_values[community])))][dim].value_counts()
+			counts = counts[:pie_pieces]
+			other = pd.Series([abs(sum(counts[:pie_pieces])-sum(counts[pie_pieces:]))],index=["Other"])
+			counts = counts.append(other)
+			labels = [i[0] for i in counts.iteritems()]
+			colors = ['yellowgreen', 'gold', 'lightskyblue', 'lightcoral','violet','tomato','cyan','blueviolet','palevioletred','darkorange','grey']
+			colors[pie_pieces] = "grey"
+			plt.pie(counts,labels=labels,colors=colors,autopct='%1.1f%%',shadow=True, startangle=90,center=(0, 0))
+			if out == None:
+				plt.show()
+			else:
+				plt.savefig(out+".svg",bbox_inches="tight")
+			plt.close()
+
+##
 # Jaccard similarity between two list.
 # (Made for use with map()) 
 ##
@@ -190,14 +224,19 @@ def read_graph(filename):
 
 def main():
 	#demon_analysis("../data/network_cleaned16.csv",(0.001,0.4),3,60,"/tmp/demon")
-	#plot_epsilon_dict()
+	#plot_epsilon_dict(out="/tmp/demon")
 
 	#G=read_graph("../data/network_cleaned16.csv")
 	#plot_distribution(distribution_type="Nodes",eps_list=[0.034,0.234,0.301,0.368],graph=G,out="/tmp/nodes_DEMON")
 	#plot_distribution(distribution_type="Density",eps_list=[0.034,0.234,0.301,0.368],graph=G,out="/tmp/density_DEMON")
 	#plot_distribution(distribution_type="Transitivity",eps_list=[0.034,0.234,0.301,0.368],graph=G,out="/tmp/transitivity_DEMON")
 
-	#plot_jaccard_heatmap(0.001)
+	#plot_jaccard_heatmap(0.301,out="/tmp/jaccard")
 
+	#for dim in ["artist","genre"]:
+		#for community in [7,8,9]:
+			#out = "/tmp/" + str(community) + "_" + dim
+			#plot_pie_external(0.301,data="../data/artists_genres.csv",dim=dim,pie_pieces=8,community=community)
+			
 if __name__ == "__main__":
 	main()
