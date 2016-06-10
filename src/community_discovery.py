@@ -169,13 +169,12 @@ def plot_jaccard_heatmap(eps,log_directory="../demon_log/",out=None):
 # Params:
 # eps - value of epsilon to analyze
 # data - csv of external data
-# community - number of community to analyze
+# community - id of community to analyze
 # log_directory - Directory of comunity analysis results
 # pie_pieces - number of segment
 # out - Path for output plot result
 def plot_pie_external(eps,data,dim,community,log_directory="../demon_log/",pie_pieces=10,out=None):
 	eps = str(eps)
-	
 	dict_list = os.listdir(log_directory)
 	for d in dict_list:
 		if eps in d:
@@ -195,6 +194,31 @@ def plot_pie_external(eps,data,dim,community,log_directory="../demon_log/",pie_p
 			else:
 				plt.savefig(out+".svg",bbox_inches="tight")
 			plt.close()
+
+def plot_demon_communities(graph,communities,out=None):
+	nodes = [y for x in communities for y in x]
+	nodes = list(set(nodes))
+	colors = ['yellowgreen', 'gold', 'lightskyblue', 'white']
+	class_colors = {}
+	for n in nodes:
+		if n in communities[0] and n in communities[1] and n in communities[2]:
+			class_colors[n] = colors[3]
+		elif n in communities[1]:
+			class_colors[n] = colors[0]
+		elif n in communities[2]:
+			class_colors[n] = colors[1]
+		else:
+			class_colors[n] = colors[2]
+				
+	H = graph.subgraph(nodes)
+	d = nx.degree(H)
+	nx.draw(H,node_list = list(class_colors.keys()), node_color=list(class_colors.values()),node_size = [v * 5 for v in d.values()],width=0.2)
+	if out == None:
+		plt.show()
+	else:
+		plt.savefig(out+".svg",bbox_inches="tight")
+	plt.close()
+	
 
 ##
 # Jaccard similarity between two list.
@@ -226,7 +250,7 @@ def main():
 	#demon_analysis("../data/network_cleaned16.csv",(0.001,0.4),3,60,"/tmp/demon")
 	#plot_epsilon_dict(out="/tmp/demon")
 
-	#G=read_graph("../data/network_cleaned16.csv")
+	G=read_graph("../data/network_cleaned16.csv")
 	#plot_distribution(distribution_type="Nodes",eps_list=[0.034,0.234,0.301,0.368],graph=G,out="/tmp/nodes_DEMON")
 	#plot_distribution(distribution_type="Density",eps_list=[0.034,0.234,0.301,0.368],graph=G,out="/tmp/density_DEMON")
 	#plot_distribution(distribution_type="Transitivity",eps_list=[0.034,0.234,0.301,0.368],graph=G,out="/tmp/transitivity_DEMON")
@@ -237,6 +261,16 @@ def main():
 		#for community in [7,8,9]:
 			#out = "/tmp/" + str(community) + "_" + dim
 			#plot_pie_external(0.301,data="../data/artists_genres.csv",dim=dim,pie_pieces=8,community=community)
+	eps = "0.301"
+	log_directory = "../demon_log/"
+	dict_list = os.listdir(log_directory)
+	list_dict_values = []
+	for d in dict_list:
+		if eps in d:
+			list_dict_values = list(dict_from_file(log_directory+d).values())
+			list_dict_values.sort(key=len,reverse=True)
+			data = [list_dict_values[7],list_dict_values[8],list_dict_values[9]]
+	plot_demon_communities(G,data,"/tmp/DEMON_degree_7-8-9")
 			
 if __name__ == "__main__":
 	main()
