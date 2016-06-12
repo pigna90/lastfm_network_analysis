@@ -1,6 +1,8 @@
 from Demon import Demon
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as cmx
+import matplotlib.colors as colors
 import networkx as nx
 import os
 from itertools import product
@@ -200,21 +202,26 @@ def plot_pie_external(eps,data,dim,community,log_directory="../demon_log/",pie_p
 				plt.savefig(out+".svg",bbox_inches="tight")
 			plt.close()
 
-def plot_demon_communities(graph,communities,out=None):
+##
+# Plot graph with different color for every set of communities
+##
+# Params:
+# graph - networkx graph to plot
+# communities - list communities (each communities is a list of nodes)
+# colors - colormap
+# out - Path for output plot result
+##
+def plot_communities(graph,communities,colors,out=None):
 	nodes = [y for x in communities for y in x]
 	nodes = list(set(nodes))
-	colors = ['yellowgreen', 'gold', 'lightskyblue', 'white']
 	class_colors = {}
 	for n in nodes:
-		if n in communities[0] and n in communities[1] and n in communities[2]:
-			class_colors[n] = colors[3]
-		elif n in communities[1]:
-			class_colors[n] = colors[0]
-		elif n in communities[2]:
-			class_colors[n] = colors[1]
-		else:
-			class_colors[n] = colors[2]
-				
+		for c in communities:
+			if n in c:
+				class_colors[n] = colors[communities.index(c)]
+			if(all(n in c for c in communities)):
+				class_colors[n] = 'white'
+
 	H = graph.subgraph(nodes)
 	d = nx.degree(H)
 	nx.draw(H,node_list = list(class_colors.keys()), node_color=list(class_colors.values()),node_size = [v * 5 for v in d.values()],width=0.2)
@@ -267,6 +274,8 @@ def main():
 
 	# Legend for plot distribution
 	legend = ["eps = " + eps for eps in eps_list]
+
+	
 	#plot_distribution(distribution_type="Nodes",list_communities=list_communities,legend=legend,graph=G)
 	#plot_distribution(distribution_type="Density",list_communities=list_communities,legend=legend,graph=G)
 	#plot_distribution(distribution_type="Transitivity",list_communities=list_communities,legend=legend,graph=G)
@@ -278,16 +287,17 @@ def main():
 			#out = "/tmp/" + str(community) + "_" + dim
 			#plot_pie_external(0.301,data="../data/artists_genres.csv",dim=dim,pie_pieces=8,community=community)
 			
-	#eps = "0.301"
-	#log_directory = "../demon_log/"
-	#dict_list = os.listdir(log_directory)
-	#list_dict_values = []
-	#for d in dict_list:
-		#if eps in d:
-			#list_dict_values = list(dict_from_file(log_directory+d).values())
-			#list_dict_values.sort(key=len,reverse=True)
-			#data = [list_dict_values[7],list_dict_values[8],list_dict_values[9]]
-	#plot_demon_communities(G,data,"/tmp/DEMON_degree_7-8-9")
+	eps = "0.301"
+	log_directory = "../demon_log/"
+	dict_list = os.listdir(log_directory)
+	list_dict_values = []
+	for d in dict_list:
+		if eps in d:
+			list_dict_values = list(dict_from_file(log_directory+d).values())
+			list_dict_values.sort(key=len,reverse=True)
+			data = [list_dict_values[7],list_dict_values[8],list_dict_values[9]]
+	colors = ['yellowgreen', 'gold', 'lightskyblue']
+	plot_communities(G,data,colors)
 			
 if __name__ == "__main__":
 	main()
