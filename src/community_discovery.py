@@ -20,13 +20,12 @@ import pandas as pd
 # out - output name file for figure
 ##
 def histogram(x,freq,xlabel=None,ylabel=None,out=None):
-	fake_label = list(map(str,x))
-	for i in range(0,len(fake_label)-1):
+	for i in range(0,len(x)-1):
 		if (i%5 != 0):
-			fake_label[i] = ""
+			x[i] = ""
 
 	plt.bar(range(len(freq)),freq,color='g',alpha=0.6,linewidth=0)
-	plt.xticks(range(len(fake_label)),fake_label, size='small',rotation='vertical')
+	plt.xticks(range(len(x)),x, size='small',rotation='vertical')
 	
 	if (xlabel != None and ylabel != None):
 		plt.xlabel(xlabel)
@@ -60,6 +59,27 @@ def demon_analysis(network,epsilon_range,min_community,bins,out):
 		freq.append(len(communities))
 		x.append(round(epsilon,3))
 		epsilon += epsilon_range[1]/bins
+
+##
+# Make a community analusis using k-clique algorithm from networkx.
+# The analysis is made by iterating on a range of k values.
+##
+# Params:
+# graph - networkx graph
+# k_lists - lists of k as integer
+# out_path - output path for results of communities analysis
+##
+def k_clique_analysis(G,k_list,out_path):
+	for k in k_list:
+		c = list(nx.k_clique_communities(G, k))
+		c = list(map(list,c))
+		out = open(out_path + str(k) + "_clique.dat","w")
+		for community in c:
+			out.write("%d\t[" % c.index(community))
+			for node in community:
+				out.write('"%s",' % node)
+			out.write("]\n")
+		out.close()
 
 ##
 # Deserialize DEMON results from file and return a list of first 30
@@ -263,11 +283,10 @@ def main():
 	G=read_graph(graph)
 
 	# Reading ommunities serialized by DEMON
-	list_communities = deserialize_demon_results(eps_list,log_demon)
+	#list_communities = deserialize_demon_results(eps_list,log_demon)
 
 	# Legend for plot distribution
-	legend = ["eps = " + eps for eps in eps_list]
-
+	#legend = ["eps = " + eps for eps in eps_list]
 	
 	#plot_distribution(distribution_type="Nodes",list_communities=list_communities,legend=legend,graph=G)
 	#plot_distribution(distribution_type="Density",list_communities=list_communities,legend=legend,graph=G)
@@ -288,7 +307,9 @@ def main():
 	#colors = ['yellowgreen', 'gold', 'lightskyblue']
 	#plot_communities(G,data,colors)
 
-	
+	k_list = list(range(2,10))
+	k_clique_analysis(G,k_list,"../data/k-clique/")
+
 			
 if __name__ == "__main__":
 	main()
