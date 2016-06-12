@@ -85,9 +85,9 @@ def deserialize_demon_results(eps_list,log_demon):
 ##
 # Params:
 # distribution_type - Type of distribution analysis {density,transitivity,nodes}
+# legend - plot legend
 # graph - Main network contain communities for analysis
-# eps_list - List of epsilon to analyze
-# log_directory - Directory of comunity analysis results
+# list_communities - lists of communities
 # out - Path for output plot result
 ##
 def plot_distribution(distribution_type,legend,graph,list_communities,out=None):
@@ -149,11 +149,10 @@ def plot_epsilon_dict(log_directory="../demon_log/",out=None):
 # Plot jaccard heatmap calculated on comunity result serialized on file.
 ##
 # Params:
-# eps - value of epsilon to analyze
-# log_directory - Directory of comunity analysis results
+# communities - list of community
 # out - Path for output plot result
 ## 
-def plot_jaccard_heatmap(communities,log_directory="../demon_log/",out=None):
+def plot_jaccard_heatmap(communities,out=None):
 	data =np.array(list(map(jaccard_similarity,list(product(communities, repeat=2)))))
 	data = data.reshape(30,30)
 	ax = plt.axes()
@@ -174,33 +173,26 @@ def plot_jaccard_heatmap(communities,log_directory="../demon_log/",out=None):
 # Plot piechart of communities external data.
 ##
 # Params:
-# eps - value of epsilon to analyze
 # data - csv of external data
-# community - id of community to analyze
-# log_directory - Directory of comunity analysis results
+# community - nodes of community
 # pie_pieces - number of segment
 # out - Path for output plot result
-def plot_pie_external(eps,data,dim,community,log_directory="../demon_log/",pie_pieces=10,out=None):
-	eps = str(eps)
-	dict_list = os.listdir(log_directory)
-	for d in dict_list:
-		if eps in d:
-			list_dict_values = list(dict_from_file(log_directory+d).values())
-			list_dict_values.sort(key=len,reverse=True)
-			df = pd.read_csv(data)
-			counts = df[df["username"].isin(list(set(list_dict_values[community])))][dim].value_counts()
-			counts = counts[:pie_pieces]
-			other = pd.Series([abs(sum(counts[:pie_pieces])-sum(counts[pie_pieces:]))],index=["Other"])
-			counts = counts.append(other)
-			labels = [i[0] for i in counts.iteritems()]
-			colors = ['yellowgreen', 'gold', 'lightskyblue', 'lightcoral','violet','tomato','cyan','blueviolet','palevioletred','darkorange','grey']
-			colors[pie_pieces] = "grey"
-			plt.pie(counts,labels=labels,colors=colors,autopct='%1.1f%%',shadow=True, startangle=90,center=(0, 0))
-			if out == None:
-				plt.show()
-			else:
-				plt.savefig(out+".svg",bbox_inches="tight")
-			plt.close()
+##
+def plot_pie_external(data,dim,community,pie_pieces=10,out=None):
+	df = pd.read_csv(data)
+	counts = df[df["username"].isin(list(set(community)))][dim].value_counts()
+	counts = counts[:pie_pieces]
+	other = pd.Series([abs(sum(counts[:pie_pieces])-sum(counts[pie_pieces:]))],index=["Other"])
+	counts = counts.append(other)
+	labels = [i[0] for i in counts.iteritems()]
+	colors = ['yellowgreen', 'gold', 'lightskyblue', 'lightcoral','violet','tomato','cyan','blueviolet','palevioletred','darkorange','grey']
+	colors[pie_pieces] = "grey"
+	plt.pie(counts,labels=labels,colors=colors,autopct='%1.1f%%',shadow=True, startangle=90,center=(0, 0))
+	if out == None:
+		plt.show()
+	else:
+		plt.savefig(out+".svg",bbox_inches="tight")
+	plt.close()
 
 ##
 # Plot graph with different color for every set of communities
@@ -259,6 +251,7 @@ def read_graph(filename):
 
 def main():
 	graph = "../data/network_cleaned16.csv"
+	external_data = "../data/artists_genres.csv"
 	log_demon = "../demon_log/"
 	eps_list = list(map(str,[0.034,0.234,0.301,0.368]))
 
@@ -283,21 +276,19 @@ def main():
 	#plot_jaccard_heatmap(list_communities[3])
 
 	#for dim in ["artist","genre"]:
-		#for community in [7,8,9]:
-			#out = "/tmp/" + str(community) + "_" + dim
-			#plot_pie_external(0.301,data="../data/artists_genres.csv",dim=dim,pie_pieces=8,community=community)
-			
-	eps = "0.301"
-	log_directory = "../demon_log/"
-	dict_list = os.listdir(log_directory)
-	list_dict_values = []
-	for d in dict_list:
-		if eps in d:
-			list_dict_values = list(dict_from_file(log_directory+d).values())
-			list_dict_values.sort(key=len,reverse=True)
-			data = [list_dict_values[7],list_dict_values[8],list_dict_values[9]]
-	colors = ['yellowgreen', 'gold', 'lightskyblue']
-	plot_communities(G,data,colors)
+		#for c in [7,8,9]:
+			#out = "/tmp/" + str(c) + "_" + dim
+			#data = list_communities[2]
+			#community = data[c]
+			#plot_pie_external(data=external_data,dim=dim,pie_pieces=8,community=community)
+
+	## Plot graph with communities			
+	#data = list_communities[2]
+	#data = [data[7],data[8],data[9]]
+	#colors = ['yellowgreen', 'gold', 'lightskyblue']
+	#plot_communities(G,data,colors)
+
+	
 			
 if __name__ == "__main__":
 	main()
