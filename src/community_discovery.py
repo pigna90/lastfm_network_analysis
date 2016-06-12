@@ -59,6 +59,16 @@ def demon_analysis(network,epsilon_range,min_community,bins,out):
 		x.append(round(epsilon,3))
 		epsilon += epsilon_range[1]/bins
 
+def deserialize_demon_results(eps_list,log_demon):
+	list_communities = []
+	for eps in eps_list:
+		dict_list = os.listdir(log_demon)
+		for d in dict_list:
+			if eps in d:
+				list_dict_values = list(dict_from_file(log_demon+d).values())
+				list_dict_values.sort(key=len,reverse=True)
+				list_communities.append(list_dict_values[:30])
+	return list_communities
 ##
 # Plot two type of distribution analysis computed on a set of comunity.
 ##
@@ -69,32 +79,24 @@ def demon_analysis(network,epsilon_range,min_community,bins,out):
 # log_directory - Directory of comunity analysis results
 # out - Path for output plot result
 ##
-def plot_distribution(distribution_type,graph,eps_list,log_directory="../demon_log/",out=None):
-	x = [i for i in range(0,30)]
-	legend = []
-	eps_list = list(map(str,eps_list))
-	for eps in eps_list:
-		dict_list = os.listdir(log_directory)
-		for d in dict_list:
-			if eps in d:
-				list_dict_values = list(dict_from_file(log_directory+d).values())
-				list_dict_values.sort(key=len,reverse=True)
-				if distribution_type.lower() == "nodes":
-					y = list(map(len,list_dict_values[:30]))
+def plot_distribution(distribution_type,legend,graph,list_communities,out=None):
+	x = [i for i in range(0,len(list_communities[0]))]
+	for communities in list_communities:
+		if distribution_type.lower() == "nodes":
+			y = list(map(len,communities))
+		else:
+			y = []
+			for l in communities:
+				H = graph.subgraph(l)
+				if distribution_type.lower() == "density":
+					y.append(nx.density(H))
+				elif distribution_type.lower() == "transitivity":
+					y.append(nx.transitivity(H))
 				else:
-					y = []
-					for l in list_dict_values[:30]:
-						H = graph.subgraph(l)
-						if distribution_type.lower() == "density":
-							y.append(nx.density(H))
-						elif distribution_type.lower() == "transitivity":
-							y.append(nx.transitivity(H))
-						else:
-							return None
-				plt.plot(x,y,linewidth=2,alpha=0.8)
-				legend.append("eps = " + eps)
+					return None
+		plt.plot(x,y,linewidth=2,alpha=0.8)
 
-	plt.legend(legend, loc='upper left')
+	plt.legend(legend, loc='upper right')
 	plt.xlabel("Comunity ID")
 	plt.ylabel(distribution_type)
 
@@ -247,11 +249,19 @@ def read_graph(filename):
 	return g
 
 def main():
+	graph = "../data/network_cleaned16.csv"
+	log_demon = "../demon_log/"
+	eps_list = list(map(str,[0.034,0.234,0.301,0.368]))
+	
 	#demon_analysis("../data/network_cleaned16.csv",(0.001,0.4),3,60,"/tmp/demon")
 	#plot_epsilon_dict(out="/tmp/demon")
 
 	G=read_graph("../data/network_cleaned16.csv")
-	#plot_distribution(distribution_type="Nodes",eps_list=[0.034,0.234,0.301,0.368],graph=G,out="/tmp/nodes_DEMON")
+
+	legend = ["eps = " + eps for eps in eps_list]
+	# Read communities serialized by DEMON
+	list_communities = deserialize_demon_results(eps_list,log_demon)
+	plot_distribution(distribution_type="Nodes",list_communities=list_communities,legend=legend,graph=G)
 	#plot_distribution(distribution_type="Density",eps_list=[0.034,0.234,0.301,0.368],graph=G,out="/tmp/density_DEMON")
 	#plot_distribution(distribution_type="Transitivity",eps_list=[0.034,0.234,0.301,0.368],graph=G,out="/tmp/transitivity_DEMON")
 
@@ -261,16 +271,17 @@ def main():
 		#for community in [7,8,9]:
 			#out = "/tmp/" + str(community) + "_" + dim
 			#plot_pie_external(0.301,data="../data/artists_genres.csv",dim=dim,pie_pieces=8,community=community)
-	eps = "0.301"
-	log_directory = "../demon_log/"
-	dict_list = os.listdir(log_directory)
-	list_dict_values = []
-	for d in dict_list:
-		if eps in d:
-			list_dict_values = list(dict_from_file(log_directory+d).values())
-			list_dict_values.sort(key=len,reverse=True)
-			data = [list_dict_values[7],list_dict_values[8],list_dict_values[9]]
-	plot_demon_communities(G,data,"/tmp/DEMON_degree_7-8-9")
+			
+	#eps = "0.301"
+	#log_directory = "../demon_log/"
+	#dict_list = os.listdir(log_directory)
+	#list_dict_values = []
+	#for d in dict_list:
+		#if eps in d:
+			#list_dict_values = list(dict_from_file(log_directory+d).values())
+			#list_dict_values.sort(key=len,reverse=True)
+			#data = [list_dict_values[7],list_dict_values[8],list_dict_values[9]]
+	#plot_demon_communities(G,data,"/tmp/DEMON_degree_7-8-9")
 			
 if __name__ == "__main__":
 	main()
