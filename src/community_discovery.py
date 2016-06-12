@@ -82,14 +82,15 @@ def k_clique_analysis(G,k_list,out_path):
 		out.close()
 
 ##
-# Deserialize DEMON results from file and return a list of first 30
+# Deserialize DEMON results from file and return a list of first n
 # ordered communities for every file read
 ##
 # Params:
 # eps_list - List of epsilon to read
 # log_demon - Path to demon log folder
+# n - number of communities for each eps
 ##
-def deserialize_demon_results(eps_list,log_demon):
+def deserialize_demon_results(eps_list,log_demon,n):
 	list_communities = []
 	for eps in eps_list:
 		dict_list = os.listdir(log_demon)
@@ -97,7 +98,7 @@ def deserialize_demon_results(eps_list,log_demon):
 			if eps in d:
 				list_dict_values = list(dict_from_file(log_demon+d).values())
 				list_dict_values.sort(key=len,reverse=True)
-				list_communities.append(list_dict_values[:30])
+				list_communities.append(list_dict_values[:n])
 	return list_communities
 
 ##
@@ -126,8 +127,9 @@ def plot_distribution(distribution_type,legend,graph,list_communities,out=None):
 				else:
 					return None
 		plt.plot(x,y,linewidth=2,alpha=0.8)
+		#plt.yscale("log")
 
-	plt.legend(legend, loc='upper right')
+	plt.legend(legend, loc='upper left')
 	plt.xlabel("Comunity ID")
 	plt.ylabel(distribution_type)
 
@@ -201,9 +203,10 @@ def plot_jaccard_heatmap(communities,out=None):
 def plot_pie_external(data,dim,community,pie_pieces=10,out=None):
 	df = pd.read_csv(data)
 	counts = df[df["username"].isin(list(set(community)))][dim].value_counts()
-	counts = counts[:pie_pieces]
 	other = pd.Series([abs(sum(counts[:pie_pieces])-sum(counts[pie_pieces:]))],index=["Other"])
+	counts = counts[:pie_pieces]
 	counts = counts.append(other)
+	print(counts)
 	labels = [i[0] for i in counts.iteritems()]
 	colors = ['yellowgreen', 'gold', 'lightskyblue', 'lightcoral','violet','tomato','cyan','blueviolet','palevioletred','darkorange','grey']
 	colors[pie_pieces] = "grey"
@@ -283,7 +286,7 @@ def main():
 	G=read_graph(graph)
 
 	# Reading ommunities serialized by DEMON
-	#list_communities = deserialize_demon_results(eps_list,log_demon)
+	#list_communities = deserialize_demon_results(eps_list,log_demon,30)
 
 	# Legend for plot distribution
 	#legend = ["eps = " + eps for eps in eps_list]
@@ -307,9 +310,26 @@ def main():
 	#colors = ['yellowgreen', 'gold', 'lightskyblue']
 	#plot_communities(G,data,colors)
 
-	k_list = list(range(2,10))
-	k_clique_analysis(G,k_list,"../data/k-clique/")
+	#k_list = list(range(2,10))
+	#k_clique_analysis(G,k_list,"../data/k-clique/")
+	
+	k_clique_communities = deserialize_demon_results(list(map(str,[4])),"../data/k-clique/",10)
 
-			
+	legend = ["k = " + str(k) for k in [3,4,5,6]]
+	
+	#plot_distribution(distribution_type="Nodes",list_communities=k_clique_communities,legend=legend,graph=G,out="/tmp/k-clique_nodes")
+	#plot_distribution(distribution_type="Density",list_communities=k_clique_communities,legend=legend,graph=G,out="/tmp/k-clique_density")
+	#plot_distribution(distribution_type="Transitivity",list_communities=k_clique_communities,legend=legend,graph=G,out="/tmp/k-clique_transitivity")
+
+	#colors = ['yellowgreen', 'gold', 'lightskyblue','royalblue','magenta','r']
+	#for data in k_clique_communities:
+		#plot_communities(G,data[:5],colors,out=str(k_clique_communities.index(data)+3)+"_clique_graph")
+
+	#c_4 = (k_clique_communities[0])[:3]
+	#for community in c_4:
+		#plot_pie_external(external_data,"artist",community)
+		#plot_pie_external(external_data,"genre",community)
+		#quit()
+
 if __name__ == "__main__":
 	main()
