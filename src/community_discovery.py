@@ -59,6 +59,14 @@ def demon_analysis(network,epsilon_range,min_community,bins,out):
 		x.append(round(epsilon,3))
 		epsilon += epsilon_range[1]/bins
 
+##
+# Deserialize DEMON results from file and return a list of first 30
+# ordered communities for every file read
+##
+# Params:
+# eps_list - List of epsilon to read
+# log_demon - Path to demon log folder
+##
 def deserialize_demon_results(eps_list,log_demon):
 	list_communities = []
 	for eps in eps_list:
@@ -69,6 +77,7 @@ def deserialize_demon_results(eps_list,log_demon):
 				list_dict_values.sort(key=len,reverse=True)
 				list_communities.append(list_dict_values[:30])
 	return list_communities
+
 ##
 # Plot two type of distribution analysis computed on a set of comunity.
 ##
@@ -142,28 +151,22 @@ def plot_epsilon_dict(log_directory="../demon_log/",out=None):
 # log_directory - Directory of comunity analysis results
 # out - Path for output plot result
 ## 
-def plot_jaccard_heatmap(eps,log_directory="../demon_log/",out=None):
-	eps = str(eps)
-	dict_list = os.listdir(log_directory)
-	for d in dict_list:
-		if eps in d:
-			list_dict_values = list(dict_from_file(log_directory+d).values())
-			list_dict_values.sort(key=len,reverse=True)
-			data =np.array(list(map(jaccard_similarity,list(product(list_dict_values[:30], repeat=2)))))
-			data = data.reshape(30,30)
-			ax = plt.axes()
-			cmap = sns.diverging_palette(220, 10, as_cmap=True)
-			heat = sns.heatmap(data,cmap=plt.cm.Reds,square=True,linewidths=.5, cbar_kws={"shrink": .5},ax = ax)
-			heat.invert_yaxis()
-			plt.ylabel("Comunity ID")
-			plt.xlabel("Comunity ID")
-			plt.yticks(size='small',rotation='horizontal')
-			plt.xticks(size='small',rotation='vertical')
-			if out == None:
-				plt.show()
-			else:
-				plt.savefig(out+".svg",bbox_inches="tight")
-			plt.close()
+def plot_jaccard_heatmap(communities,log_directory="../demon_log/",out=None):
+	data =np.array(list(map(jaccard_similarity,list(product(communities, repeat=2)))))
+	data = data.reshape(30,30)
+	ax = plt.axes()
+	cmap = sns.diverging_palette(220, 10, as_cmap=True)
+	heat = sns.heatmap(data,cmap=plt.cm.Reds,square=True,linewidths=.5, cbar_kws={"shrink": .5},ax = ax)
+	heat.invert_yaxis()
+	plt.ylabel("Comunity ID")
+	plt.xlabel("Comunity ID")
+	plt.yticks(size='small',rotation='horizontal')
+	plt.xticks(size='small',rotation='vertical')
+	if out == None:
+		plt.show()
+	else:
+		plt.savefig(out+".svg",bbox_inches="tight")
+	plt.close()
 
 ##
 # Plot piechart of communities external data.
@@ -220,7 +223,6 @@ def plot_demon_communities(graph,communities,out=None):
 	else:
 		plt.savefig(out+".svg",bbox_inches="tight")
 	plt.close()
-	
 
 ##
 # Jaccard similarity between two list.
@@ -252,20 +254,24 @@ def main():
 	graph = "../data/network_cleaned16.csv"
 	log_demon = "../demon_log/"
 	eps_list = list(map(str,[0.034,0.234,0.301,0.368]))
-	
-	#demon_analysis("../data/network_cleaned16.csv",(0.001,0.4),3,60,"/tmp/demon")
+
+	# Make DEMON analysis on eps range and serialize results on file
+	#demon_analysis(graph,(0.001,0.4),3,60,"/tmp/demon")
 	#plot_epsilon_dict(out="/tmp/demon")
 
-	G=read_graph("../data/network_cleaned16.csv")
+	# Loading graph from file
+	G=read_graph(graph)
 
-	legend = ["eps = " + eps for eps in eps_list]
-	# Read communities serialized by DEMON
+	# Reading ommunities serialized by DEMON
 	list_communities = deserialize_demon_results(eps_list,log_demon)
-	plot_distribution(distribution_type="Nodes",list_communities=list_communities,legend=legend,graph=G)
-	#plot_distribution(distribution_type="Density",eps_list=[0.034,0.234,0.301,0.368],graph=G,out="/tmp/density_DEMON")
-	#plot_distribution(distribution_type="Transitivity",eps_list=[0.034,0.234,0.301,0.368],graph=G,out="/tmp/transitivity_DEMON")
 
-	#plot_jaccard_heatmap(0.301,out="/tmp/jaccard")
+	# Legend for plot distribution
+	legend = ["eps = " + eps for eps in eps_list]
+	#plot_distribution(distribution_type="Nodes",list_communities=list_communities,legend=legend,graph=G)
+	#plot_distribution(distribution_type="Density",list_communities=list_communities,legend=legend,graph=G)
+	#plot_distribution(distribution_type="Transitivity",list_communities=list_communities,legend=legend,graph=G)
+	
+	#plot_jaccard_heatmap(list_communities[3])
 
 	#for dim in ["artist","genre"]:
 		#for community in [7,8,9]:
