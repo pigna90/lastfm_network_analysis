@@ -8,6 +8,8 @@ import os
 from itertools import product
 import seaborn as sns
 import pandas as pd
+import community
+from sklearn.preprocessing import normalize
 
 ##
 # Print a bar histogram
@@ -80,6 +82,28 @@ def k_clique_analysis(G,k_list,out_path):
 				out.write('"%s",' % node)
 			out.write("]\n")
 		out.close()
+
+##
+# Make community analysis using Louvain algorithm from communities module,
+# and serialize result on file as list of nodes for each communities.
+##
+# Params:
+# graph - networkx graph
+# out_path - output path for results of communities analysis
+##
+def louvain_analysis(graph,out_path):
+	partition = community.best_partition(graph)
+	comm = []
+	for c in set(partition.values()):
+		comm.append([k for k, v in partition.items() if v == c])
+	comm.sort(key=len,reverse=True)
+	out = open(out_path + "louvain_communities.dat","w")
+	for c in comm:
+		out.write("%d\t[" % comm.index(c))
+		for node in c:
+			out.write('"%s",' % node)
+		out.write("]\n")
+	out.close()
 
 ##
 # Deserialize DEMON results from file and return a list of first n
@@ -206,7 +230,6 @@ def plot_pie_external(data,dim,community,pie_pieces=10,out=None):
 	other = pd.Series([abs(sum(counts[:pie_pieces])-sum(counts[pie_pieces:]))],index=["Other"])
 	counts = counts[:pie_pieces]
 	counts = counts.append(other)
-	print(counts)
 	labels = [i[0] for i in counts.iteritems()]
 	colors = ['yellowgreen', 'gold', 'lightskyblue', 'lightcoral','violet','tomato','cyan','blueviolet','palevioletred','darkorange','grey']
 	colors[pie_pieces] = "grey"
@@ -330,6 +353,8 @@ def main():
 		#plot_pie_external(external_data,"artist",community)
 		#plot_pie_external(external_data,"genre",community)
 		#quit()
+
+	louvain_analysis(G,"/tmp/")
 
 if __name__ == "__main__":
 	main()
