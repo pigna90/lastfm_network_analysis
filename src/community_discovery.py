@@ -93,37 +93,50 @@ def k_clique_analysis(G,k_list,out_path):
 ##
 def louvain_analysis(graph,out_path):
 	partition = community.best_partition(graph)
-	comm = []
-	for c in set(partition.values()):
-		comm.append([k for k, v in partition.items() if v == c])
-	comm.sort(key=len,reverse=True)
 	out = open(out_path + "louvain_communities.dat","w")
-	for c in comm:
-		out.write("%d\t[" % comm.index(c))
-		for node in c:
+	for c in set(partition.values()):
+		out.write("%d\t[" % c)
+		comm = [k for k, v in partition.items() if v == c]
+		for node in comm:
 			out.write('"%s",' % node)
 		out.write("]\n")
 	out.close()
 
 ##
-# Deserialize DEMON results from file and return a list of first n
-# ordered communities for every file read
+# Deserialize DEMON/K-Clique results from file and return a list of
+# first n ordered communities for every file read
 ##
 # Params:
-# eps_list - List of epsilon to read
-# log_demon - Path to demon log folder
-# n - number of communities for each eps
+# param - List of epsilon/k to read
+# log_path - Path to demon log folder
+# n - number of communities for each eps/k
 ##
-def deserialize_demon_results(eps_list,log_demon,n):
+def deserialize_demon_kclique(param,log_path,n):
 	list_communities = []
-	for eps in eps_list:
-		dict_list = os.listdir(log_demon)
+	for p in param:
+		dict_list = os.listdir(log_path)
 		for d in dict_list:
-			if eps in d:
-				list_dict_values = list(dict_from_file(log_demon+d).values())
+			if p in d:
+				list_dict_values = list(dict_from_file(log_path+d).values())
 				list_dict_values.sort(key=len,reverse=True)
 				list_communities.append(list_dict_values[:n])
 	return list_communities
+
+##
+# Deserialize Louvain results from file and return a list of
+# first n ordered communities
+##
+# Params:
+# log_path - Path to demon log folder
+# n - number of communities to read
+##
+def deserialize_louvain(log_path,n=None):
+	list_dict_values = list(dict_from_file(log_path).values())
+	list_dict_values.sort(key=len,reverse=True)
+	if n==None:
+		return list_dict_values
+	else:
+		return list_dict_values[:n]
 
 ##
 # Plot two type of distribution analysis computed on a set of comunity.
@@ -336,9 +349,9 @@ def main():
 	#k_list = list(range(2,10))
 	#k_clique_analysis(G,k_list,"../data/k-clique/")
 	
-	k_clique_communities = deserialize_demon_results(list(map(str,[4])),"../data/k-clique/",10)
+	#k_clique_communities = deserialize_demon_results(list(map(str,[4])),"../data/k-clique/",10)
 
-	legend = ["k = " + str(k) for k in [3,4,5,6]]
+	#legend = ["k = " + str(k) for k in [3,4,5,6]]
 	
 	#plot_distribution(distribution_type="Nodes",list_communities=k_clique_communities,legend=legend,graph=G,out="/tmp/k-clique_nodes")
 	#plot_distribution(distribution_type="Density",list_communities=k_clique_communities,legend=legend,graph=G,out="/tmp/k-clique_density")
@@ -353,8 +366,6 @@ def main():
 		#plot_pie_external(external_data,"artist",community)
 		#plot_pie_external(external_data,"genre",community)
 		#quit()
-
-	louvain_analysis(G,"/tmp/")
 
 if __name__ == "__main__":
 	main()
