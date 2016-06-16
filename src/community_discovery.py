@@ -221,10 +221,11 @@ def histogram_epsilon_frequencies(communities_lists,out=None):
 # Params:
 # communities - list of community
 # out - Path for output plot result
+# shape - shape of matrix
 ## 
-def plot_jaccard_heatmap(communities,row=30,col=30,out=None):
+def plot_jaccard_heatmap(communities,shape=30,out=None):
 	data =np.array(list(map(jaccard_similarity,list(product(communities, repeat=2)))))
-	data = data.reshape(row,col)
+	data = data.reshape(shape,shape)
 	ax = plt.axes()
 	cmap = sns.diverging_palette(220, 10, as_cmap=True)
 	heat = sns.heatmap(data,cmap=plt.cm.Reds,square=True,linewidths=.5, cbar_kws={"shrink": .5},ax = ax)
