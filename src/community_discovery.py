@@ -74,6 +74,8 @@ def demon_analysis(network,epsilon_range,min_community,bins,out):
 def k_clique_analysis(G,k_list,out_path):
 	for k in k_list:
 		c = list(nx.k_clique_communities(G, k))
+		print(type(c[0]))
+		quit()
 		c = list(map(list,c))
 		out = open(out_path + str(k) + "_clique.dat","w")
 		for community in c:
@@ -220,9 +222,9 @@ def histogram_epsilon_frequencies(communities_lists,out=None):
 # communities - list of community
 # out - Path for output plot result
 ## 
-def plot_jaccard_heatmap(communities,out=None):
+def plot_jaccard_heatmap(communities,row=30,col=30,out=None):
 	data =np.array(list(map(jaccard_similarity,list(product(communities, repeat=2)))))
-	data = data.reshape(30,30)
+	data = data.reshape(row,col)
 	ax = plt.axes()
 	cmap = sns.diverging_palette(220, 10, as_cmap=True)
 	heat = sns.heatmap(data,cmap=plt.cm.Reds,square=True,linewidths=.5, cbar_kws={"shrink": .5},ax = ax)
@@ -327,70 +329,70 @@ def example_usage():
 	colors = ['yellowgreen', 'gold', 'lightskyblue','royalblue','magenta','r']
 
 	## Loading graph from file
-	#G=read_graph(graph)
+	G=read_graph(graph)
 	
-	## Make DEMON analysis on eps range and serialize results on file
-	#demon_analysis(graph,(0.001,0.4),3,60,"/tmp/demon")
+	# Make DEMON analysis on eps range and serialize results on file
+	demon_analysis(graph,(0.001,0.4),3,60,"/tmp/demon")
 
-	## Reading ommunities serialized by DEMON
-	#list_communities = deserialize_demon_kclique(log_demon)
-	## Reading eps_list results serialized by DEMON. For each eps
-	# only the first 30 communities
+	# Reading ommunities serialized by DEMON
+	list_communities = deserialize_demon_kclique(log_demon)
+	# Reading eps_list results serialized by DEMON. For each eps
+	 only the first 30 communities
 	list_communities = deserialize_demon_kclique(log_demon,eps_list,30)
 
-	## Plot histogram of communities made with different eps
-	#histogram_epsilon_frequencies(list_communities)
+	# Plot histogram of communities made with different eps
+	histogram_epsilon_frequencies(list_communities)
 
-	## Legend for plot distribution
-	#legend = ["eps = " + eps for eps in eps_list]
+	# Legend for plot distribution
+	legend = ["eps = " + eps for eps in eps_list]
 
-	## Plot number of nodes/density and transitivity
-	## for different eps results
-	#for d_type in ["Nodes","Density","Transitivity"]:
-		#plot_distribution(distribution_type=d_type,list_communities=list_communities,legend=legend,graph=G)
+	# Plot number of nodes/density and transitivity
+	# for different eps results
+	for d_type in ["Nodes","Density","Transitivity"]:
+		plot_distribution(distribution_type=d_type,list_communities=list_communities,legend=legend,graph=G)
 
-	## Jaccard heatmap for communities overlapping on one of eps results
-	## communities. For example communities calculated with eps = 0.031
-	#plot_jaccard_heatmap(list_communities[3])
+	# Jaccard heatmap for communities overlapping on one of eps results
+	# communities. For example communities calculated with eps = 0.031
+	plot_jaccard_heatmap(list_communities[3])
 
-	# Validation with external data.
-	# Select an eps results for analysis. For example eps = 0.031
-	#data = list_communities[2]
-	## For some dimensions of external data...
-	#for dim in ["artist","genre"]:
-		## for some communities...
-		#for c in [7,8,9]:
-			#community = data[c]
-			#plot_pie_external(data=external_data,dim=dim,pie_pieces=8,community=community)
+	 Validation with external data.
+	 Select an eps results for analysis. For example eps = 0.031
+	data = list_communities[2]
+	# For some dimensions of external data...
+	for dim in ["artist","genre"]:
+		# for some communities...
+		for c in [7,8,9]:
+			community = data[c]
+			plot_pie_external(data=external_data,dim=dim,pie_pieces=8,community=community)
 
-	## Plot graph with communities		
-	#data = list_communities[2]
-	#data = [data[7],data[8],data[9]]
-	#plot_communities(G,data,colors)
+	# Plot graph with communities		
+	data = list_communities[2]
+	data = [data[7],data[8],data[9]]
+	plot_communities(G,data,colors)
 
-	## K-Clique analysis
-	#k_list = list(range(2,10))
-	#k_clique_analysis(G,k_list,"../data/k-clique/")
+	# K-Clique analysis
+	k_list = list(range(2,10))
+	k_clique_analysis(G,[4],"../data/k-clique/")
 
-	## Deserialize results make with k-clique
-	#k_clique_communities = deserialize_demon_results(list(map(str,[4])),"../data/k-clique/",10)
+	# Deserialize results make with k-clique
+	k_clique_communities = deserialize_demon_results(list(map(str,[4])),"../data/k-clique/",10)
 
 	
-	#legend = ["k = " + str(k) for k in [3,4,5,6]]
-	#for d_type in ["Nodes","Density","Transitivity"]:
-		#plot_distribution(distribution_type=d_type,list_communities=k_clique_communities,legend=legend,graph=G)
+	legend = ["k = " + str(k) for k in [3,4,5,6]]
+	for d_type in ["Nodes","Density","Transitivity"]:
+		plot_distribution(distribution_type=d_type,list_communities=k_clique_communities,legend=legend,graph=G)
 
-	## Plot graph with communities	
-	#for data in k_clique_communities:
-		#plot_communities(G,data[:5],colors,out=str(k_clique_communities.index(data)+3)+"_clique_graph")
+	# Plot graph with communities	
+	for data in k_clique_communities:
+		plot_communities(G,data[:5],colors,out=str(k_clique_communities.index(data)+3)+"_clique_graph")
 
-	## Validation with external data
-	#c_4 = (k_clique_communities[0])[:3]
-	#for community in c_4:
-		#plot_pie_external(external_data,"artist",community)
-		#plot_pie_external(external_data,"genre",community)
+	# Validation with external data
+	c_4 = (k_clique_communities[0])[:3]
+	for community in c_4:
+		plot_pie_external(external_data,"artist",community)
+		plot_pie_external(external_data,"genre",community)
 
-	## Louvain analysis
+	# Louvain analysis
 	louvain_analysis(G,log_louvain)
 	louvain = [deserialize_louvain("../data/louvain_communities.dat")]
 
